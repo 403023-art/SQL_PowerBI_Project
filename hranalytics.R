@@ -1,0 +1,61 @@
+install.packages('tidyverse')
+# Loading the core package
+library(tidyverse)
+
+# Re-creating a standard structured corporate HR dataset (Sample size = 100)
+set.seed(42)
+hr_analytics_data <- tibble(
+  Emp_ID = 1:100,
+  Age = sample(22:60, 100, replace = TRUE),
+  Monthly_Salary_INR = sample(45000:150000, 100, replace = TRUE),
+  Years_At_Company = sample(1:15, 100, replace = TRUE),
+  Overtime_Hours = sample(0:40, 100, replace = TRUE),
+  Work_Life_Balance = sample(1:5, 100, replace = TRUE) # 1 = Poor, 5 = Excellent
+)
+
+# Introducing a few NA values to demonstrate Data Cleaning (Unit 2)
+hr_analytics_data$Monthly_Salary_INR[c(5, 25, 50)] <- NA
+
+#  Handling Missing Values (Imputation using Median)
+median_salary <- median(hr_analytics_data$Monthly_Salary_INR, na.rm = TRUE)
+cleaned_hr_data <- hr_analytics_data %>%
+  mutate(Monthly_Salary_INR = ifelse(is.na(Monthly_Salary_INR), median_salary, Monthly_Salary_INR))
+
+# Checking if missing values are resolved
+sum(is.na(cleaned_hr_data$Monthly_Salary_INR)) # Should return 0
+
+# Summarizing Metrics (Mean, Median, Standard Deviation, Range)
+descriptive_summary <- cleaned_hr_data %>%
+  summarise(
+    Mean_Salary   = mean(Monthly_Salary_INR),
+    Median_Salary = median(Monthly_Salary_INR),
+    SD_Salary     = sd(Monthly_Salary_INR),
+    Max_Salary    = max(Monthly_Salary_INR),
+    Min_Salary    = min(Monthly_Salary_INR)
+  )
+print(descriptive_summary)
+
+#  Relationship measuresing: Covariance & Correlation Coefficient (r)
+covariance_val <- cov(cleaned_hr_data$Overtime_Hours, cleaned_hr_data$Work_Life_Balance)
+correlation_val <- cor(cleaned_hr_data$Overtime_Hours, cleaned_hr_data$Work_Life_Balance)
+
+print(paste("Covariance:", round(covariance_val, 2)))
+print(paste("Correlation (r):", round(correlation_val, 2))) # Expect a negative relationship
+
+#  Data Visualization (ggplot2) - Scatter Plot with Regression Line
+ggplot(cleaned_hr_data, aes(x = Overtime_Hours, y = Work_Life_Balance)) +
+  geom_point(color = "darkblue", alpha = 0.7) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) + # Trendline
+  theme_minimal() +
+  labs(
+    title = "Impact of Overtime on Work-Life Balance",
+    subtitle = "Descriptive Analytics Exercise ",
+    x = "Monthly Overtime (Hours)",
+    y = "Work-Life Balance Score (1-5)"
+  )
+
+# Building a Simple Linear Regression model to predict Work-Life Balance
+regression_model <- lm(Work_Life_Balance ~ Overtime_Hours, data = cleaned_hr_data)
+
+# Printing Detailed Summary Matrix (Coefficients, P-values, R-Squared)
+summary('regression_model')
